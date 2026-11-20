@@ -1,0 +1,9 @@
+data/
+backups/
+.env
+.env.*
+!.env.example
+*.sqlite*
+*.log
+node_modules/
+backups/
