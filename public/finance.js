@@ -1,0 +1,10 @@
+
+export function digits(v){return String(v).replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c))}
+export function jparts(date){let p=new Intl.DateTimeFormat('en-US-u-ca-persian',{timeZone:'Asia/Tehran',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date(date.length===10?date+'T12:00:00Z':date));return ['year','month','day'].map(k=>Number(p.find(x=>x.type===k).value))}
+export function monthKey(date){let [y,m]=jparts(date);return y+'-'+String(m).padStart(2,'0')}
+export function jalali(date){return jparts(date).map((x,i)=>i?String(x).padStart(2,'0'):x).join('/')}
+export function isoDate(text){let v=digits(text).trim().split(/[/-]/).map(Number);if(v.length!==3||v[0]<1300||v[0]>1600||v[1]<1||v[1]>12||v[2]<1||v[2]>31)return null;let start=Date.UTC(v[0]+621,2,15);for(let n=0;n<380;n++){let date=new Date(start+n*86400000).toISOString().slice(0,10);if(jalali(date)===v.map((x,i)=>i?String(x).padStart(2,'0'):x).join('/'))return date}return null}
+export function shiftMonth(key,delta){let [y,m]=key.split('-').map(Number),n=y*12+m-1+delta;return Math.floor(n/12)+'-'+String(n%12+1).padStart(2,'0')}
+export function monthReport(items,key,config={}){let rows=items.filter(i=>i.recordType==='actual'&&i.date&&monthKey(i.date)===key),total=rows.reduce((s,i)=>s+i.amount,0),income=config.income||0,groups={};for(let i of rows)groups[i.category]=(groups[i.category]||0)+i.amount;let excess=Math.max(0,total-income);return {rows,total,income,groups,remaining:Math.max(0,income-total),excess,overPercent:income>0?excess/income*100:null}}
+
+export function validMonths(months){if(months===undefined)return true;if(!months||typeof months!=='object'||Array.isArray(months)||Object.keys(months).length>3600)return false;let amount=v=>Number.isSafeInteger(v)&&v>=0&&v<=1e15;return Object.entries(months).every(([k,c])=>/^1[3-6][0-9]{2}-(0[1-9]|1[0-2])$/.test(k)&&c&&amount(c.income)&&c.budgets&&typeof c.budgets==='object'&&!Array.isArray(c.budgets)&&Object.entries(c.budgets).every(([key,v])=>/^[a-z][a-z0-9_-]{0,80}$/.test(key)&&!['__proto__','constructor','prototype'].includes(key)&&amount(v)))}
